@@ -1,0 +1,10 @@
+[package]
+authors = ["bjorn3 <bjorn3@users.noreply.github.com>"]
+name = "wrts_fetch"
+version = "0.1.0"
+[dependencies]
+reqwest = "*"
+serde = "*"
+serde_derive = "*"
+serde_json = "*"
+url = "*"

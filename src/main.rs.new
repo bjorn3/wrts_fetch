@@ -1,0 +1,78 @@
+extern crate url;
+extern crate reqwest;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
+
+use std::io::prelude::*;
+use url::Url;
+
+#[derive(Debug, Deserialize)]
+struct WrtsData {
+    title: String,
+    list_collection: ListCollection,
+}
+
+#[derive(Debug, Deserialize)]
+struct ListCollection {
+    lists: Vec<List>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct List {
+    words: Vec<Word>,
+    subject: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct Word {
+    word: String,
+}
+
+#[derive(Debug)]
+struct OutputJson {
+    title: String,
+    languages: [String; 2],
+    words: Vec<[String; 2]>,
+}
+
+fn main() {
+    let url = std::env::args().skip(1).next().expect("No url given");
+    println!("Url: {}", url);
+    let url = Url::parse(&url).expect("failed to parse url");
+    let fragment = url.fragment().expect("invalid url");
+    println!("Url: {}", fragment);
+    let fragment = Url::options().base_url(Some(&Url::parse("http://example.com/").unwrap())).parse(&fragment).expect("failed to parse fragment");
+    let fragment_segments = fragment.path_segments().unwrap();
+    let id = fragment_segments.skip(1).next().unwrap();
+    println!("id: {}", id);
+
+    let list_url = format!("https://wrts.nl/lists/{}.json", id);
+    println!("List url: {}", list_url);
+
+    let mut res = reqwest::get(&list_url).unwrap();
+    assert!(res.status().is_success());
+
+    let mut content = String::new();
+    res.read_to_string(&mut content).unwrap();
+    println!("Content: {}", content);
+
+    let data: WrtsData = serde_json::from_str(&content).unwrap();
+    println!("data: {:#?}", data);
+
+    let lists = data.list_collection.lists.clone();
+    let mut words = lists.iter().map(|_|[String::new(), String::new()]).collect::<Vec<[String; 2]>>();
+    let mut langs = [String::new(), String::new()];
+    for (i, list) in lists.into_iter().enumerate() {
+        langs[i] = list.subject;
+        for (j, word) in list.words.into_iter().enumerate() {
+            words[j][i-1] = word.word;
+        }
+    }
+    let output_data = OutputJson {
+        title: data.title,
+        languages: langs,
+        words: words
+    };
+    println!("output: {:#?}", output_data);
+}
