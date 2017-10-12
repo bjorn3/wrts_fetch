@@ -103,21 +103,20 @@ fn format_openteacher_2_file(data: OutData) -> String {
 }
 
 fn main() {
-    let url = std::env::args().skip(1).next().expect("No url given");
-    println!("Url: {}", url);
+    for url in std::env::args().skip(1) {
+        println!("Url: {}", url);
 
-    let id = parse_list_url(&url);
-    let data = fetch_and_parse_list(&id);
-    let title = data.title.clone();
-    let out_data = wrts_data_to_out_data(data);
+        let id = parse_list_url(&url);
+        let data = fetch_and_parse_list(&id);
+        let title = data.title.clone();
+        let out_data = wrts_data_to_out_data(data);
 
-    println!("num words: {}", out_data.words.len());
+        println!("num words: {}", out_data.words.len());
 
-    let out_xml = format_openteacher_2_file(out_data);
-    
-    //println!("==========\n{}", out_xml);
-    
-    let mut file = File::create(&format!("{}.ot", title)).unwrap();
-    file.write_all(out_xml.as_bytes()).unwrap();
+        let out_xml = format_openteacher_2_file(out_data);
+
+        let mut file = File::create(&format!("{}.ot", title)).unwrap();
+        file.write_all(out_xml.as_bytes()).unwrap();
+    }
 }
 
